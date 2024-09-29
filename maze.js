@@ -15,15 +15,11 @@ class Maze {
     this._startTile = { x: 0, y: 0 }
     this._endTile = { x: 0, y: 0 }
     this._emoji = {}
-
-    // for rendering
     this._isShortestPathHidden = true
-    // Runs sequence of operations to start the maze program
     this._setEmojis()
     this._run()
   }
 
-  // Main function that runs all the operations in correct order to run the maze
   _run = () => {
     this._generateBinaryTreeMaze()
     this._setStartAndEndTiles()
@@ -31,7 +27,6 @@ class Maze {
   }
 
   _reset = () => {
-    // clear the tile data
     this._grid.forEach((row) =>
       row.forEach((tile) => {
         tile.isWall = false
@@ -82,23 +77,23 @@ class Maze {
     }
   }
 
-  _runBreadthFirstSearch = () => {
+  _runBreadthFirstSearch = async () => {
     let queue = [this._grid[this._startTile.y][this._startTile.x]]
     let nextQueue = []
 
-    const stepIntoBatched = () => {
+    const stepIntoBatched = async () => {
       while (queue.length) {
         const tile = queue.shift()
         const { x, y, isWall, isTraversed, isEnd } = tile
 
         if (isWall || isTraversed) continue
         if (isEnd) {
-          // Route completed! Target found.
+          // Route completed! Target found
           this._traceShortestPath(tile)
           return
         }
 
-        tile.isTraversed = true // Mark tile as traversed
+        tile.isTraversed = true
 
         // Queue the neighbouring tiles and set parent tile to the current tile
         let d = x + 1
@@ -131,12 +126,11 @@ class Maze {
       }
 
       // Redraw and recursively continue with the next step after the delay
-      setTimeout(() => {
-        queue = nextQueue
-        nextQueue = []
-        this._draw() // Ensure the grid is redrawn after updating the tile state
-        stepIntoBatched()
-      }, 50)
+      queue = nextQueue
+      nextQueue = []
+      this._draw()
+      await this._sleep(50)
+      stepIntoBatched()
     }
 
     stepIntoBatched()
@@ -181,25 +175,22 @@ class Maze {
 
   _draw = () => {
     console.clear()
-    console.log(this._grid.reduce((rowAcc, row) => {
-      return rowAcc + '\n' + row.reduce(
-        (a, { isStart, isEnd, isTraversed, isWall, isShortest }) =>
-          `${a}${
-            isStart
-              ? this._emoji.start
-              : isEnd
-              ? this._emoji.end
-              : isShortest && !this._isShortestPathHidden
-              ? this._emoji.shortest
-              : isTraversed
-              ? this._emoji.traversed
-              : isWall
-              ? this._emoji.wall
-              : this._emoji.empty
-          }`,
-        ''
+    console.log(this._grid.reduce((rowAcc, row) => `${rowAcc}\n${row.reduce(
+      (tileAcc, { isStart, isEnd, isTraversed, isWall, isShortest }) =>
+        `${tileAcc}${isStart
+          ? this._emoji.start
+          : isEnd
+          ? this._emoji.end
+          : isShortest && !this._isShortestPathHidden
+          ? this._emoji.shortest
+          : isTraversed
+          ? this._emoji.traversed
+          : isWall
+          ? this._emoji.wall
+          : this._emoji.empty
+          }`,'')}`,''
       )
-    }, ''))
+    )
   }
 
   _sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
